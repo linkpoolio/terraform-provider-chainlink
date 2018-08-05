@@ -55,8 +55,8 @@ func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	d.Set("name", bT.Name)
-	d.Set("url", bT.Url)
+	d.Set("name", bT.Data.Attributes.Name)
+	d.Set("url", bT.Data.Attributes.Url)
 	return nil
 }
 

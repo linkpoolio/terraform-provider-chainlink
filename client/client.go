@@ -8,12 +8,16 @@ import (
 	"io/ioutil"
 )
 
-func NewNodeClient(c Config) *NodeClient {
+func NewNodeClient(c *Config) *NodeClient {
 	return &NodeClient{Config: c}
 }
 
 func (c *NodeClient) CreateBridgeType(addr, name, url string) error {
-	bridgeType := BridgeType{Name: name, Url: url}
+	err := c.setSessionCookie(c.Config.Protocol, addr)
+	if err != nil {
+		return err
+	}
+	bridgeType := BridgeTypeAttributes{Name: name, Url: url}
 	b, err := json.Marshal(bridgeType)
 	if err != nil {
 		return err
@@ -27,8 +31,7 @@ func (c *NodeClient) CreateBridgeType(addr, name, url string) error {
 	if err != nil {
 		return err
 	}
-	req.SetBasicAuth(c.Config.Username, c.Config.Password)
-
+	req.AddCookie(c.Cookie)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -41,6 +44,10 @@ func (c *NodeClient) CreateBridgeType(addr, name, url string) error {
 
 func (c *NodeClient) ReadBridgeType(id string) (*BridgeType, error) {
 	m := NewMatcherFromId(id)
+	err := c.setSessionCookie(c.Config.Protocol, m.NodeAddress)
+	if err != nil {
+		return nil, err
+	}
 
 	client := http.Client{}
 	req, err := http.NewRequest(
@@ -50,8 +57,7 @@ func (c *NodeClient) ReadBridgeType(id string) (*BridgeType, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(c.Config.Username, c.Config.Password)
-
+	req.AddCookie(c.Cookie)
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -75,6 +81,10 @@ func (c *NodeClient) ReadBridgeType(id string) (*BridgeType, error) {
 
 func (c *NodeClient) DeleteBridgeType(id string) error {
 	m := NewMatcherFromId(id)
+	err := c.setSessionCookie(c.Config.Protocol, m.NodeAddress)
+	if err != nil {
+		return err
+	}
 
 	client := http.Client{}
 	req, err := http.NewRequest(
@@ -84,8 +94,7 @@ func (c *NodeClient) DeleteBridgeType(id string) error {
 	if err != nil {
 		return err
 	}
-	req.SetBasicAuth(c.Config.Username, c.Config.Password)
-
+	req.AddCookie(c.Cookie)
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
@@ -94,5 +103,29 @@ func (c *NodeClient) DeleteBridgeType(id string) error {
 		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
 
+	return nil
+}
+
+func (c *NodeClient) setSessionCookie(protocol, hostname string) error {
+	session := &Session{Email: c.Config.Email, Password: c.Config.Password}
+	b, err := json.Marshal(session)
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(
+		fmt.Sprintf("%s://%s/sessions", protocol, hostname),
+		"application/json",
+		bytes.NewReader(b),
+	)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("status code of %d was returned when trying to get a session", resp.StatusCode)
+	}
+	if len(resp.Cookies()) == 0 {
+		return fmt.Errorf("no cookie was returned after getting a session")
+	}
+	c.Cookie = resp.Cookies()[0]
 	return nil
 }

@@ -40,8 +40,8 @@ func newClient(d *schema.ResourceData) (interface{}, error) {
 	if protocol != "http" && protocol != "https" {
 		return nil, fmt.Errorf("protocol not supported, use http or https")
 	}
-	return client.NewNodeClient(client.Config{
-		Username: d.Get("username").(string),
+	return client.NewNodeClient(&client.Config{
+		Email: d.Get("username").(string),
 		Password: d.Get("password").(string),
 		Protocol: protocol,
 	}), nil

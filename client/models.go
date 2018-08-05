@@ -3,17 +3,31 @@ package client
 import (
 	"fmt"
 	"strings"
+	"net/http"
 )
 
 type Config struct {
-	Username string
+	Email    string
 	Password string
 	Protocol string
 }
 
 type BridgeType struct {
+	Data BridgeTypeData `json:"data"`
+}
+
+type BridgeTypeData struct {
+	Attributes BridgeTypeAttributes `json:"attributes"`
+}
+
+type BridgeTypeAttributes struct {
 	Name string `json:"name"`
 	Url  string `json:"url"`
+}
+
+type Session struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type Client interface {
@@ -24,7 +38,8 @@ type Client interface {
 
 type NodeClient struct {
 	Client
-	Config Config
+	Config *Config
+	Cookie *http.Cookie
 }
 
 type DataIdentifier interface {

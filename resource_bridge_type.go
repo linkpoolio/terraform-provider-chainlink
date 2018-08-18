@@ -53,7 +53,8 @@ func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*client.NodeClient)
 	bT, err := c.ReadBridgeType(d.Id())
 	if err != nil {
-		return err
+		d.SetId("")
+		return nil
 	}
 	d.Set("name", bT.Data.Attributes.Name)
 	d.Set("url", bT.Data.Attributes.Url)

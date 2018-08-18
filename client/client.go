@@ -62,7 +62,7 @@ func (c *NodeClient) ReadBridgeType(id string) (*BridgeType, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 404 {
 		return nil, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
 

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/linkpoolio/terraform-provider-clnode/client"
+	"github.com/linkpoolio/terraform-provider-chainlink/client"
 	"strings"
 	"fmt"
 )
@@ -15,10 +15,6 @@ func resourceBridgeType() *schema.Resource {
 		Delete: resourceBridgeTypeDelete,
 
 		Schema: map[string]*schema.Schema{
-			"node_addr": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -32,52 +28,46 @@ func resourceBridgeType() *schema.Resource {
 }
 
 func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.NodeClient)
+	c := m.(*client.Chainlink)
 	name := d.Get("name").(string)
 	if name != strings.ToLower(name) {
 		return fmt.Errorf("name must not contain any capitals")
 	}
-	err := c.CreateBridgeType(
-		d.Get("node_addr").(string),
-		name,
-		d.Get("url").(string))
+	err := c.CreateBridge(name, d.Get("url").(string))
 	if err != nil {
 		return err
 	}
-	matcher := client.NewMatcher(d.Get("node_addr").(string), name)
+	matcher := client.NewMatcher("bridge", name)
 	d.SetId(matcher.Id())
 	return nil
 }
 
 func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.NodeClient)
-	bT, err := c.ReadBridgeType(d.Id())
+	c := m.(*client.Chainlink)
+	ma := client.NewMatcherFromID(d.Id())
+	bT, err := c.ReadBridge(ma.Data)
 	if err != nil {
 		d.SetId("")
 		return nil
 	}
-	d.Set("name", bT.Data.Attributes.Name)
-	d.Set("url", bT.Data.Attributes.Url)
+	if err := d.Set("name", bT.Data.Attributes.Name); err != nil {
+		return err
+	}
+	if err := d.Set("url", bT.Data.Attributes.URL); err != nil {
+		return err
+	}
 	return nil
 }
 
 func resourceBridgeTypeUpdate(d *schema.ResourceData, m interface{}) error {
-	err := resourceBridgeTypeDelete(d, m)
-	if err != nil {
+	if err := resourceBridgeTypeDelete(d, m); err != nil {
 		return err
 	}
-	err = resourceBridgeTypeCreate(d, m)
-	if err != nil {
-		return err
-	}
-	return nil
+	return resourceBridgeTypeCreate(d, m)
 }
 
 func resourceBridgeTypeDelete(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.NodeClient)
-	err := c.DeleteBridgeType(d.Id())
-	if err != nil {
-		return err
-	}
-	return nil
+	c := m.(*client.Chainlink)
+	ma := client.NewMatcherFromID(d.Id())
+	return c.DeleteBridge(ma.Data)
 }

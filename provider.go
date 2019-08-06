@@ -2,47 +2,43 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/linkpoolio/terraform-provider-clnode/client"
-	"fmt"
+	"github.com/linkpoolio/terraform-provider-chainlink/client"
 )
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
-			"username": {
+			"url": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "chainlink",
-				Description: "ChainLink Node API Username",
+				Default:     "http://localhost:6688",
+				Description: "The node url address",
+			},
+			"email": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "admin@node.local",
+				Description: "Node email address",
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Optional:    true,
 				Default:     "twochains",
-				Description: "ChainLink Node API Password",
-			},
-			"protocol": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Default:     "http",
-				Description: "ChainLink Node API Protocol (http or https)",
+				Description: "Node password",
 			},
 		},
 		ConfigureFunc: newClient,
 		ResourcesMap: map[string]*schema.Resource{
-			"clnode_bridge_type": resourceBridgeType(),
+			"chainlink_bridge": resourceBridgeType(),
+			"chainlink_spec":   resourceSpec(),
 		},
 	}
 }
 
 func newClient(d *schema.ResourceData) (interface{}, error) {
-	protocol := d.Get("protocol").(string)
-	if protocol != "http" && protocol != "https" {
-		return nil, fmt.Errorf("protocol not supported, use http or https")
-	}
-	return client.NewNodeClient(&client.Config{
-		Email: d.Get("username").(string),
+	return client.NewChainlink(&client.Config{
+		Email:    d.Get("email").(string),
 		Password: d.Get("password").(string),
-		Protocol: protocol,
-	}), nil
+		URL:      d.Get("url").(string),
+	})
 }

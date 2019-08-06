@@ -1,119 +1,130 @@
 package client
 
 import (
-	"fmt"
 	"bytes"
 	"encoding/json"
-	"net/http"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 )
 
-func NewNodeClient(c *Config) *NodeClient {
-	return &NodeClient{Config: c}
+func NewChainlink(c *Config) (*Chainlink, error) {
+	cl := &Chainlink{Config: c}
+	return cl, cl.setSessionCookie()
 }
 
-func (c *NodeClient) CreateBridgeType(addr, name, url string) error {
-	err := c.setSessionCookie(c.Config.Protocol, addr)
-	if err != nil {
-		return err
+func (c *Chainlink) CreateSpec(spec string) (string, error) {
+	specObj := make(map[string]interface{})
+	resp := Spec{}
+	if err := json.Unmarshal([]byte(spec), &specObj); err != nil {
+		return "", err
+	} else if resp, err := c.do(http.MethodPost, "/v2/specs", &specObj, &resp);
+		err != nil {
+		return "", err
+	} else if resp.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
-	bridgeType := BridgeTypeAttributes{Name: name, Url: url}
-	b, err := json.Marshal(bridgeType)
-	if err != nil {
-		return err
-	}
+	return fmt.Sprint(resp.Data["id"]), nil
+}
 
-	client := http.Client{}
-	req, err := http.NewRequest(
-		"POST",
-		fmt.Sprintf("%s://%s/v2/bridge_types", c.Config.Protocol, addr),
-		bytes.NewReader(b))
-	if err != nil {
-		return err
+func (c *Chainlink) ReadSpec(id string) (*Spec, error) {
+	specObj := &Spec{}
+	if resp, err := c.do(http.MethodGet, fmt.Sprintf("/v2/specs/%s", id), nil, specObj);
+		err != nil {
+		return specObj, err
+	} else if resp.StatusCode != 200 {
+		return specObj, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
-	req.AddCookie(c.Cookie)
-	resp, err := client.Do(req)
-	if err != nil {
+	return specObj, nil
+}
+
+func (c *Chainlink) CreateBridge(name, url string) error {
+	if resp, err := c.do(
+		http.MethodPost,
+		"/v2/bridge_types",
+		BridgeTypeAttributes{Name: name, URL: url},
+		nil);
+	err != nil {
 		return err
-	}
-	if resp.StatusCode != 200 {
+	} else if resp.StatusCode != 200 {
 		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
 	return nil
 }
 
-func (c *NodeClient) ReadBridgeType(id string) (*BridgeType, error) {
-	m := NewMatcherFromId(id)
-	err := c.setSessionCookie(c.Config.Protocol, m.NodeAddress)
-	if err != nil {
-		return nil, err
-	}
+func (c *Chainlink) ReadBridge(name string) (*BridgeType, error) {
+	bt := BridgeType{}
+	if resp, err := c.do(
+		http.MethodGet,
+		fmt.Sprintf("/v2/bridge_types/%s", name),
+		nil,
+		&bt);
+	err != nil {
 
-	client := http.Client{}
-	req, err := http.NewRequest(
-		"GET",
-		fmt.Sprintf("%s://%s/v2/bridge_types/%s", c.Config.Protocol, m.NodeAddress, m.Data),
-		nil)
-	if err != nil {
-		return nil, err
-	}
-	req.AddCookie(c.Cookie)
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != 200 && resp.StatusCode != 404 {
+	} else if resp.StatusCode != 200 && resp.StatusCode != 404 {
 		return nil, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	bT := BridgeType{}
-	err = json.Unmarshal(b, &bT)
-	if err != nil {
-		return nil, err
-	}
-
-	return &bT, nil
+	return &bt, nil
 }
 
-func (c *NodeClient) DeleteBridgeType(id string) error {
-	m := NewMatcherFromId(id)
-	err := c.setSessionCookie(c.Config.Protocol, m.NodeAddress)
-	if err != nil {
+func (c *Chainlink) DeleteBridge(name string) error {
+	if resp, err := c.do(
+		http.MethodDelete,
+		fmt.Sprintf("/v2/bridge_types/%s", name),
+		nil,
+		nil);
+	err != nil {
 		return err
+	} else if resp.StatusCode != 200 {
+		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+	}
+	return nil
+}
+
+func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{}) (*http.Response, error) {
+	b, err := json.Marshal(body)
+	if body != nil && err != nil {
+		return nil, err
 	}
 
 	client := http.Client{}
 	req, err := http.NewRequest(
-		"DELETE",
-		fmt.Sprintf("%s://%s/v2/bridge_types/%s", c.Config.Protocol, m.NodeAddress, m.Data),
-		nil)
+		method,
+		fmt.Sprintf("%s%s", c.Config.URL, endpoint),
+		bytes.NewBuffer(b),
+	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.AddCookie(c.Cookie)
+
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
-	}
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+		return resp, err
+	} else if obj == nil {
+		return resp, err
 	}
 
-	return nil
+	b, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(b, &obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, err
 }
 
-func (c *NodeClient) setSessionCookie(protocol, hostname string) error {
+func (c *Chainlink) setSessionCookie() error {
 	session := &Session{Email: c.Config.Email, Password: c.Config.Password}
 	b, err := json.Marshal(session)
 	if err != nil {
 		return err
 	}
 	resp, err := http.Post(
-		fmt.Sprintf("%s://%s/sessions", protocol, hostname),
+		fmt.Sprintf("%s/sessions", c.Config.URL),
 		"application/json",
 		bytes.NewReader(b),
 	)

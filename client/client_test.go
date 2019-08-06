@@ -1,38 +1,75 @@
 package client
 
 import (
-	"testing"
 	"github.com/stretchr/testify/assert"
-	"fmt"
+	"github.com/stretchr/testify/require"
+	"testing"
 )
 
-func TestNodeClient_CreateReadDeleteBridgeType(t *testing.T) {
-	c := newDefaultClient()
-	n := RandomString(10)
-	u := fmt.Sprintf("http://%s.com/", RandomString(10))
-	m := NewMatcher(defaultNodeAddress(), n)
+var job = `
+{
+  "initiators": [
+    {
+      "type": "runlog"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "httpget"
+    },
+    {
+      "type": "jsonparse"
+    },
+    {
+      "type": "multiply"
+    },
+    {
+      "type": "ethuint256"
+    },
+    {
+      "type": "ethtx"
+    }
+  ]
+}`
 
-	err := c.CreateBridgeType(defaultNodeAddress(), n, u)
+func TestNodeClient_CreateReadDeleteBridgeType(t *testing.T) {
+	c := newDefaultClient(t)
+	n := "adapter"
+	u := "http://adapter.com/"
+	m := NewMatcher(u, n)
+
+	err := c.CreateBridge(n, u)
 	assert.NoError(t, err)
 
-	bT, err := c.ReadBridgeType(m.Id())
+	bT, err := c.ReadBridge(m.Data)
 	assert.NoError(t, err)
 
 	assert.Equal(t, bT.Data.Attributes.Name, n)
-	assert.Equal(t, bT.Data.Attributes.Url, u)
+	assert.Equal(t, bT.Data.Attributes.URL, u)
 
-	err = c.DeleteBridgeType(m.Id())
+	err = c.DeleteBridge(m.Id())
 	assert.NoError(t, err)
 }
 
-func newDefaultClient() *NodeClient {
-	return NewNodeClient(&Config{
-		Email:    "chainlink",
-		Password: "twochains",
-		Protocol: "http",
-	})
+func TestNodeClient_CreateReadSpec(t *testing.T) {
+	c := newDefaultClient(t)
+
+	id, err := c.CreateSpec(job)
+	assert.NoError(t, err)
+	m := NewMatcher("spec", id)
+
+	spec, err := c.ReadSpec(m.Data)
+	assert.NoError(t, err)
+
+	assert.Equal(t, spec.Data["id"], id)
 }
 
-func defaultNodeAddress() string {
-	return "localhost:6688"
+func newDefaultClient(t *testing.T) *Chainlink {
+	cl, err := NewChainlink(&Config{
+		Email:    "admin@node.local",
+		Password: "twochains",
+		URL: 	  "http://localhost:6688",
+	})
+	require.Nil(t, err)
+	return cl
 }

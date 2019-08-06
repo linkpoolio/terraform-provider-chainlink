@@ -1,0 +1,24 @@
+{
+  "initiators": [
+    {
+      "type": "runlog"
+    }
+  ],
+  "tasks": [
+    {
+      "type": "${bridge}"
+    },
+    {
+      "type": "copy"
+    },
+    {
+      "type": "multiply"
+    },
+    {
+      "type": "ethuint256"
+    },
+    {
+      "type": "ethtx"
+    }
+  ]
+}

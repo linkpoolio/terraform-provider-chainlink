@@ -19,3 +19,7 @@ vendor
 .idea/
 
 # End of https://www.gitignore.io/api/go
+
+.terraform
+*.tfstate
+.terragrunt-cache

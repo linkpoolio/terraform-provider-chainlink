@@ -44,11 +44,9 @@ func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*client.Chainlink)
-	ma := client.NewMatcherFromID(d.Id())
-	bT, err := c.ReadBridge(ma.Data)
+	bT, err := c.ReadBridge(d.Get("name").(string))
 	if err != nil {
-		d.SetId("")
-		return nil
+		return err
 	}
 	if err := d.Set("name", bT.Data.Attributes.Name); err != nil {
 		return err
@@ -67,7 +65,5 @@ func resourceBridgeTypeUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBridgeTypeDelete(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.Chainlink)
-	ma := client.NewMatcherFromID(d.Id())
-	return c.DeleteBridge(ma.Data)
+	return m.(*client.Chainlink).DeleteBridge(d.Get("name").(string))
 }

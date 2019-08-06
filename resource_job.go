@@ -12,6 +12,11 @@ func resourceSpec() *schema.Resource {
 		Delete: resourceSpecDelete,
 
 		Schema: map[string]*schema.Schema{
+			"spec_id": {
+				Type:     schema.TypeString,
+				Computed: true,
+				ForceNew: true,
+			},
 			"json": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -30,17 +35,20 @@ func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
 	}
 	matcher := client.NewMatcher("spec", id)
 	d.SetId(matcher.Id())
+	if err := d.Set("spec_id", id); err != nil {
+		return err
+	}
 	return nil
 }
 
 func resourceSpecRead(d *schema.ResourceData, m interface{}) error {
 	c := m.(*client.Chainlink)
-	spec, err := c.ReadSpec(d.Id())
+	spec, err := c.ReadSpec(d.Get("spec_id").(string))
 	if err != nil {
 		d.SetId("")
-		return nil
+		return err
 	}
-	if err := d.Set("id", spec.Data["id"]); err != nil {
+	if err := d.Set("spec_id", spec.Data["id"]); err != nil {
 		return err
 	}
 	return nil

@@ -15,20 +15,20 @@ func NewChainlink(c *Config) (*Chainlink, error) {
 
 func (c *Chainlink) CreateSpec(spec string) (string, error) {
 	specObj := make(map[string]interface{})
-	resp := Spec{}
+	specResp := Response{}
 	if err := json.Unmarshal([]byte(spec), &specObj); err != nil {
 		return "", err
-	} else if resp, err := c.do(http.MethodPost, "/v2/specs", &specObj, &resp);
+	} else if resp, err := c.do(http.MethodPost, "/v2/specs", &specObj, &specResp);
 		err != nil {
 		return "", err
 	} else if resp.StatusCode != 200 {
 		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
-	return fmt.Sprint(resp.Data["id"]), nil
+	return fmt.Sprint(specResp.Data["id"]), nil
 }
 
-func (c *Chainlink) ReadSpec(id string) (*Spec, error) {
-	specObj := &Spec{}
+func (c *Chainlink) ReadSpec(id string) (*Response, error) {
+	specObj := &Response{}
 	if resp, err := c.do(http.MethodGet, fmt.Sprintf("/v2/specs/%s", id), nil, specObj);
 		err != nil {
 		return specObj, err
@@ -79,6 +79,18 @@ func (c *Chainlink) DeleteBridge(name string) error {
 		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
 	return nil
+}
+
+func (c *Chainlink) ReadWallet() (string, error) {
+	walletObj := &ResponseArray{}
+	if resp, err := c.do(http.MethodGet, "/v2/user/balances", nil, &walletObj); err != nil {
+		return "", err
+	} else if resp.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+	} else if len(walletObj.Data) == 0 {
+		return "", fmt.Errorf("unexpected response back from Chainlink, no wallets were given")
+	}
+	return fmt.Sprint(walletObj.Data[0]["id"]), nil
 }
 
 func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{}) (*http.Response, error) {

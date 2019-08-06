@@ -32,6 +32,9 @@ func Provider() *schema.Provider {
 			"chainlink_bridge": resourceBridgeType(),
 			"chainlink_spec":   resourceSpec(),
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"chainlink_wallet": resourceDataWallet(),
+		},
 	}
 }
 

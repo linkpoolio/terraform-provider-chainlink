@@ -12,7 +12,11 @@ type Config struct {
 	Password string
 }
 
-type Spec struct {
+type ResponseArray struct {
+	Data []map[string]interface{}
+}
+
+type Response struct {
 	Data map[string]interface{}
 }
 

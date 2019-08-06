@@ -45,26 +45,30 @@ HCL files, or fetch it via other methods, it will be stored in plain-text or in-
 
 Available resources:
 
-- cl_bridge
-- cl_spec
+- chainlink_bridge
+- chainlink_spec
 
-#### cl_bridge
+Available data sources:
+
+- chainlink_wallet
+
+#### chainlink_bridge
 
 This will create and manage bridge types (external adaptors) on the Chainlink node, an example:
 
 ```
-resource "cl_bridge" "asset_price" {
+resource "chainlink_bridge" "asset_price" {
     name       = "assetprice"
     url        = "http://localhost:8080/price"
 }
 ```
 
-#### cl_spec
+#### chainlink_spec
 
 This will create and manage bridge types (external adaptors) on the Chainlink node, an example:
 
 ```
-resource "cl_spec" "httpget_uint256" {
+resource "chainlink_spec" "httpget_uint256" {
     json = <<-EOF
 {
   "initiators": [
@@ -91,5 +95,15 @@ resource "cl_spec" "httpget_uint256" {
   ]
 } 
 EOF
+}
+```
+
+#### chainlink_wallet
+
+```
+data "chainlink_wallet" "this" {}
+
+output "wallet_address" {
+    value = "${data.chainlink_wallet.this.address}"
 }
 ```

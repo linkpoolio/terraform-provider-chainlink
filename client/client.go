@@ -38,6 +38,16 @@ func (c *Chainlink) ReadSpec(id string) (*Response, error) {
 	return specObj, nil
 }
 
+func (c *Chainlink) DestroySpec(id string) error {
+	if resp, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs/%s", id), nil, nil);
+		err != nil {
+		return err
+	} else if resp.StatusCode != 200 {
+		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+	}
+	return nil
+}
+
 func (c *Chainlink) CreateBridge(name, url string) error {
 	if resp, err := c.do(
 		http.MethodPost,

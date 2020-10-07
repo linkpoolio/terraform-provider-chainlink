@@ -1,13 +1,13 @@
-package main
+package chainlink
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/linkpoolio/terraform-provider-chainlink/client"
 	"strings"
-	"fmt"
 )
 
-func resourceBridgeType() *schema.Resource {
+func ResourceChainlinkBridgeType() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceBridgeTypeCreate,
 		Read:   resourceBridgeTypeRead,

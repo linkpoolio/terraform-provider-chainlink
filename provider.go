@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/linkpoolio/terraform-provider-chainlink/chainlink"
 	"github.com/linkpoolio/terraform-provider-chainlink/client"
 )
 
@@ -29,11 +30,11 @@ func Provider() *schema.Provider {
 		},
 		ConfigureFunc: newClient,
 		ResourcesMap: map[string]*schema.Resource{
-			"chainlink_bridge": resourceBridgeType(),
-			"chainlink_spec":   resourceSpec(),
+			"chainlink_bridge": chainlink.ResourceChainlinkBridgeType(),
+			"chainlink_spec":   chainlink.ResourceChainlinkSpec(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"chainlink_wallet": resourceDataWallet(),
+			"chainlink_wallet": chainlink.DataSourceChainlinkWallet(),
 		},
 	}
 }

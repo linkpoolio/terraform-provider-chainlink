@@ -1,11 +1,11 @@
-package main
+package chainlink
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/linkpoolio/terraform-provider-chainlink/client"
 )
 
-func resourceSpec() *schema.Resource {
+func ResourceChainlinkSpec() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceSpecCreate,
 		Read:   resourceSpecRead,

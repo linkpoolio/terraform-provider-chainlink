@@ -1,13 +1,13 @@
-package main
+package chainlink
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/linkpoolio/terraform-provider-chainlink/client"
 )
 
-func resourceDataWallet() *schema.Resource {
+func DataSourceChainlinkWallet() *schema.Resource {
 	return &schema.Resource{
-		Read:   resourceDataWalletRead,
+		Read: resourceDataWalletRead,
 
 		Schema: map[string]*schema.Schema{
 			"address": {

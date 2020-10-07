@@ -15,7 +15,7 @@ description: |-
 
 resource "chainlink_bridge" "coinmarketcap" {
     name = "coinmarketcap"
-    url  = "http://coinmarketcap.local:8080/
+    url  = "http://coinmarketcap.local:8080/"
 }
 
 ```

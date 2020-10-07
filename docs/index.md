@@ -16,7 +16,8 @@ Requirements:
 
 ## Example Usage
 
-```
+```terraform
+
 provider "chainlink" {
     email    = "admin@node.local"
     password = "twochains"

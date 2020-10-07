@@ -9,17 +9,18 @@ func DataSourceChainlinkWallet() *schema.Resource {
 	return &schema.Resource{
 		Read: resourceDataWalletRead,
 
-		Schema: map[string]*schema.Schema{
+		Schema: mergeSchemaWithNodeProperties(map[string]*schema.Schema{
 			"address": {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-		},
+		}),
 	}
 }
 
 func resourceDataWalletRead(d *schema.ResourceData, m interface{}) error {
-	if addr, err := m.(*client.Chainlink).ReadWallet(); err != nil {
+	c := NewClientFromModel(d, m)
+	if addr, err := c.ReadWallet(); err != nil {
 		return err
 	} else if err := d.Set("address", addr); err != nil {
 		return err

@@ -17,6 +17,12 @@ data "chainlink_wallet" "this" {}
 
 ## Schema
 
+### Optional
+
+- **chainlink_url** (String, Optional) equivalent to `url` in the provider configuration, takes precedence over the provider
+- **chainlink_email** (String, Optional) equivalent to `email` in the provider configuration, takes precedence over the provider
+- **chainlink_password** (String, Optional) equivalent to `password` in the provider configuration, takes precedence over the provider
+
 ### Read-only
 
 - **address** (String, Read-only) the Ethereum address of the Chainlink node

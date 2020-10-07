@@ -1,8 +1,10 @@
 package client
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"math/rand"
 	"testing"
 )
 
@@ -34,7 +36,7 @@ var job = `
 
 func TestNodeClient_CreateReadDeleteBridgeType(t *testing.T) {
 	c := newDefaultClient(t)
-	n := "adapter"
+	n := fmt.Sprintf("adapter-%d", rand.Int())
 	u := "http://adapter.com/"
 	m := NewMatcher(u, n)
 
@@ -47,11 +49,11 @@ func TestNodeClient_CreateReadDeleteBridgeType(t *testing.T) {
 	assert.Equal(t, bT.Data.Attributes.Name, n)
 	assert.Equal(t, bT.Data.Attributes.URL, u)
 
-	err = c.DeleteBridge(m.Id())
+	err = c.DeleteBridge(m.Data)
 	assert.NoError(t, err)
 }
 
-func TestNodeClient_CreateReadSpec(t *testing.T) {
+func TestNodeClient_CreateReadDeleteSpec(t *testing.T) {
 	c := newDefaultClient(t)
 
 	id, err := c.CreateSpec(job)
@@ -62,6 +64,9 @@ func TestNodeClient_CreateReadSpec(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, spec.Data["id"], id)
+
+	err = c.DeleteSpec(m.Data)
+	assert.NoError(t, err)
 }
 
 func newDefaultClient(t *testing.T) *Chainlink {

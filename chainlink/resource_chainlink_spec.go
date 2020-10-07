@@ -10,8 +10,9 @@ func ResourceChainlinkSpec() *schema.Resource {
 		Create: resourceSpecCreate,
 		Read:   resourceSpecRead,
 		Delete: resourceSpecDelete,
+		Update: resourceSpecUpdate,
 
-		Schema: map[string]*schema.Schema{
+		Schema: mergeSchemaWithNodeProperties(map[string]*schema.Schema{
 			"spec_id": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -22,12 +23,12 @@ func ResourceChainlinkSpec() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-		},
+		}),
 	}
 }
 
 func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.Chainlink)
+	c := NewClientFromModel(d, m)
 	json := d.Get("json").(string)
 	id, err := c.CreateSpec(json)
 	if err != nil {
@@ -42,7 +43,7 @@ func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSpecRead(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.Chainlink)
+	c := NewClientFromModel(d, m)
 	spec, err := c.ReadSpec(d.Get("spec_id").(string))
 	if err != nil {
 		d.SetId("")
@@ -54,7 +55,13 @@ func resourceSpecRead(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
+func resourceSpecUpdate(d *schema.ResourceData, m interface{}) error {
+	if err := resourceSpecDelete(d, m); err != nil {
+		return err
+	}
+	return resourceSpecCreate(d, m)
+}
+
 func resourceSpecDelete(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.Chainlink)
-	return c.DestroySpec(d.Get("spec_id").(string))
+	return NewClientFromModel(d, m).DeleteSpec(d.Get("spec_id").(string))
 }

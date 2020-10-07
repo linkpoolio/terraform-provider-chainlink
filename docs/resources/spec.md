@@ -54,6 +54,12 @@ resource "chainlink_spec" "vrf" {
 
 - **json** (String, Required) The encoded JSON object of the job specification.
 
+### Optional
+
+- **chainlink_url** (String, Optional) equivalent to `url` in the provider configuration, takes precedence over the provider
+- **chainlink_email** (String, Optional) equivalent to `email` in the provider configuration, takes precedence over the provider
+- **chainlink_password** (String, Optional) equivalent to `password` in the provider configuration, takes precedence over the provider
+
 ### Read-only
 
 - **spec_id** (String, Read-only) the ID of the job spec

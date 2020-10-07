@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -38,11 +39,11 @@ func (c *Chainlink) ReadSpec(id string) (*Response, error) {
 	return specObj, nil
 }
 
-func (c *Chainlink) DestroySpec(id string) error {
+func (c *Chainlink) DeleteSpec(id string) error {
 	if resp, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs/%s", id), nil, nil);
 		err != nil {
 		return err
-	} else if resp.StatusCode != 200 {
+	} else if resp.StatusCode != 204 {
 		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	}
 	return nil
@@ -104,16 +105,20 @@ func (c *Chainlink) ReadWallet() (string, error) {
 }
 
 func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{}) (*http.Response, error) {
+	var buf io.Reader
+
 	b, err := json.Marshal(body)
 	if body != nil && err != nil {
 		return nil, err
+	} else if body != nil {
+		buf = bytes.NewBuffer(b)
 	}
 
 	client := http.Client{}
 	req, err := http.NewRequest(
 		method,
 		fmt.Sprintf("%s%s", c.Config.URL, endpoint),
-		bytes.NewBuffer(b),
+		buf,
 	)
 	if err != nil {
 		return nil, err

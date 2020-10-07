@@ -14,7 +14,7 @@ func ResourceChainlinkBridgeType() *schema.Resource {
 		Update: resourceBridgeTypeUpdate,
 		Delete: resourceBridgeTypeDelete,
 
-		Schema: map[string]*schema.Schema{
+		Schema: mergeSchemaWithNodeProperties(map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -23,12 +23,12 @@ func ResourceChainlinkBridgeType() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-		},
+		}),
 	}
 }
 
 func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.Chainlink)
+	c := NewClientFromModel(d, m)
 	name := d.Get("name").(string)
 	if name != strings.ToLower(name) {
 		return fmt.Errorf("name must not contain any capitals")
@@ -43,7 +43,7 @@ func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
-	c := m.(*client.Chainlink)
+	c := NewClientFromModel(d, m)
 	bT, err := c.ReadBridge(d.Get("name").(string))
 	if err != nil {
 		return err
@@ -65,5 +65,5 @@ func resourceBridgeTypeUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBridgeTypeDelete(d *schema.ResourceData, m interface{}) error {
-	return m.(*client.Chainlink).DeleteBridge(d.Get("name").(string))
+	return NewClientFromModel(d, m).DeleteBridge(d.Get("name").(string))
 }

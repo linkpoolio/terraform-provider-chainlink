@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/linkpoolio/terraform-provider-chainlink/chainlink"
-	"github.com/linkpoolio/terraform-provider-chainlink/client"
 )
 
 func Provider() *schema.Provider {
@@ -28,7 +27,7 @@ func Provider() *schema.Provider {
 				Description: "Node password",
 			},
 		},
-		ConfigureFunc: newClient,
+		ConfigureFunc: chainlink.NewClient,
 		ResourcesMap: map[string]*schema.Resource{
 			"chainlink_bridge": chainlink.ResourceChainlinkBridgeType(),
 			"chainlink_spec":   chainlink.ResourceChainlinkSpec(),
@@ -37,12 +36,4 @@ func Provider() *schema.Provider {
 			"chainlink_wallet": chainlink.DataSourceChainlinkWallet(),
 		},
 	}
-}
-
-func newClient(d *schema.ResourceData) (interface{}, error) {
-	return client.NewChainlink(&client.Config{
-		Email:    d.Get("email").(string),
-		Password: d.Get("password").(string),
-		URL:      d.Get("url").(string),
-	})
 }

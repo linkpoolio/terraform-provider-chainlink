@@ -55,5 +55,6 @@ func resourceSpecRead(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSpecDelete(d *schema.ResourceData, m interface{}) error {
-	return nil
+	c := m.(*client.Chainlink)
+	return c.DestroySpec(d.Get("spec_id").(string))
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 )
@@ -28,6 +27,27 @@ func (c *Chainlink) CreateSpec(spec string) (string, error) {
 	return fmt.Sprint(specResp.Data["id"]), nil
 }
 
+func (c *Chainlink) CreateSpecV2(spec string) (string, error) {
+	specResp := Response{}
+	if resp, err := c.doRaw(http.MethodPost, "/v2/specs_v2", []byte(spec), &specResp);
+		err != nil {
+		return "", err
+	} else if resp.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+	}
+	return fmt.Sprint(specResp.Data["jobID"]), nil
+}
+
+func (c *Chainlink) DeleteSpecV2(id string) error {
+	if resp, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs_v2/%s", id), nil, nil);
+		err != nil {
+		return err
+	} else if resp.StatusCode != 204 {
+		return fmt.Errorf("unexpected response code, got %d, expected 204", resp.StatusCode)
+	}
+	return nil
+}
+
 func (c *Chainlink) ReadSpec(id string) (*Response, error) {
 	specObj := &Response{}
 	if resp, err := c.do(http.MethodGet, fmt.Sprintf("/v2/specs/%s", id), nil, specObj);
@@ -44,7 +64,7 @@ func (c *Chainlink) DeleteSpec(id string) error {
 		err != nil {
 		return err
 	} else if resp.StatusCode != 204 {
-		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+		return fmt.Errorf("unexpected response code, got %d, expected 204", resp.StatusCode)
 	}
 	return nil
 }
@@ -104,21 +124,12 @@ func (c *Chainlink) ReadWallet() (string, error) {
 	return fmt.Sprint(walletObj.Data[0]["id"]), nil
 }
 
-func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{}) (*http.Response, error) {
-	var buf io.Reader
-
-	b, err := json.Marshal(body)
-	if body != nil && err != nil {
-		return nil, err
-	} else if body != nil {
-		buf = bytes.NewBuffer(b)
-	}
-
+func (c *Chainlink) doRaw(method, endpoint string, body []byte, obj interface{}) (*http.Response, error) {
 	client := http.Client{}
 	req, err := http.NewRequest(
 		method,
 		fmt.Sprintf("%s%s", c.Config.URL, endpoint),
-		buf,
+		bytes.NewBuffer(body),
 	)
 	if err != nil {
 		return nil, err
@@ -132,7 +143,7 @@ func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{
 		return resp, err
 	}
 
-	b, err = ioutil.ReadAll(resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -142,6 +153,14 @@ func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{
 	}
 
 	return resp, err
+}
+
+func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{}) (*http.Response, error) {
+	b, err := json.Marshal(body)
+	if body != nil && err != nil {
+		return nil, err
+	}
+	return c.doRaw(method, endpoint, b, obj)
 }
 
 func (c *Chainlink) setSessionCookie() error {

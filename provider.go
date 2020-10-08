@@ -29,8 +29,9 @@ func Provider() *schema.Provider {
 		},
 		ConfigureFunc: chainlink.NewClient,
 		ResourcesMap: map[string]*schema.Resource{
-			"chainlink_bridge": chainlink.ResourceChainlinkBridgeType(),
-			"chainlink_spec":   chainlink.ResourceChainlinkSpec(),
+			"chainlink_bridge":  chainlink.ResourceChainlinkBridgeType(),
+			"chainlink_spec":    chainlink.ResourceChainlinkSpec(),
+			"chainlink_spec_v2": chainlink.ResourceChainlinkSpecV2(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"chainlink_wallet": chainlink.DataSourceChainlinkWallet(),

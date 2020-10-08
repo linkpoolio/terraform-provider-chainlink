@@ -57,8 +57,12 @@ EOF
 
 ## Schema
 
-### Required
+### Optional
 
-- **url** (String, Required) the URL of the Chainlink node
-- **email** (String, Required) the sign-in email used to login to the Chainlink node
-- **password** (String, Required) the password for the account used to sign-in
+- **url** (String, Optional) the URL of the Chainlink node
+- **email** (String, Optional) the sign-in email used to login to the Chainlink node
+- **password** (String, Optional) the password for the account used to sign-in
+
+The above values are optional as they can be overridden in each data source or resource. The reason for this is to 
+workaround the limitations with `for_each` and `count` on modules, as a user may want to interact with multiple 
+Chainlink nodes dynamically.

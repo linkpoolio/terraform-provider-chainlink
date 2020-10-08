@@ -1,0 +1,38 @@
+name: Build
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    container:
+      image: golang:1.15.2
+
+    services:
+      postgres:
+        image: postgres:10.8
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      ganache:
+        image: trufflesuite/ganache-cli
+        ports:
+          - 8545:8545
+      chainlink:
+        image: smartcontract/chainlink
+        env:
+          DATABASE_URL: postgres://postgres:5432/postgres?user=postgres&password=password&sslmode=disable
+          ETH_URL: ws://ganache:8545
+          ETH_CHAIN_ID: 1337
+        ports:
+          - 6688:6688
+
+    steps:
+      - uses: actions/checkout@master
+      - run: go get
+      #- run: go test ./... -coverprofile=coverage.txt Exclude tests currently due to the requirement of Chainlink needing its passwords provided as files, adding complexity into CI

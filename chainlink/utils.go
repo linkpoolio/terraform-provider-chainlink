@@ -29,14 +29,16 @@ func mergeSchemaWithNodeProperties(schemaMap map[string]*schema.Schema) map[stri
 		ForceNew: true,
 	}
 	schemaMap["chainlink_email"] = &schema.Schema{
-		Type:     schema.TypeString,
-		Optional: true,
-		ForceNew: false,
+		Type:      schema.TypeString,
+		Optional:  true,
+		ForceNew:  false,
+		Sensitive: true,
 	}
 	schemaMap["chainlink_password"] = &schema.Schema{
-		Type:     schema.TypeString,
-		Optional: true,
-		ForceNew: false,
+		Type:      schema.TypeString,
+		Optional:  true,
+		ForceNew:  false,
+		Sensitive: true,
 	}
 	return schemaMap
 }

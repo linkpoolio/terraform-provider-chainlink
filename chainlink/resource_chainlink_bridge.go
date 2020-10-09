@@ -45,7 +45,10 @@ func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
 func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
 	c := NewClientFromModel(d, m)
 	bT, err := c.ReadBridge(d.Get("name").(string))
-	if err != nil {
+	if err == client.ErrNotFound {
+		d.SetId("")
+		return nil
+	} else if err != nil {
 		return err
 	}
 	if err := d.Set("name", bT.Data.Attributes.Name); err != nil {

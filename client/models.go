@@ -20,6 +20,12 @@ type Response struct {
 	Data map[string]interface{}
 }
 
+func NewResponse() Response {
+	return Response{
+		Data: map[string]interface{}{},
+	}
+}
+
 type BridgeType struct {
 	Data BridgeTypeData `json:"data"`
 }

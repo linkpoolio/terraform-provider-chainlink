@@ -3,10 +3,13 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
+
+var ErrNotFound = errors.New("unexpected response code, got 404")
 
 func NewChainlink(c *Config) (*Chainlink, error) {
 	cl := &Chainlink{Config: c}
@@ -14,117 +17,65 @@ func NewChainlink(c *Config) (*Chainlink, error) {
 }
 
 func (c *Chainlink) CreateSpec(spec string) (string, error) {
-	specObj := make(map[string]interface{})
-	specResp := Response{}
-	if err := json.Unmarshal([]byte(spec), &specObj); err != nil {
-		return "", err
-	} else if resp, err := c.do(http.MethodPost, "/v2/specs", &specObj, &specResp);
-		err != nil {
-		return "", err
-	} else if resp.StatusCode != 200 {
-		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
-	}
-	return fmt.Sprint(specResp.Data["id"]), nil
+	specResp := NewResponse()
+	_, err := c.doRaw(http.MethodPost, "/v2/specs", []byte(spec), &specResp, http.StatusOK)
+	return fmt.Sprint(specResp.Data["id"]), err
 }
 
 func (c *Chainlink) CreateSpecV2(spec string) (string, error) {
-	specResp := Response{}
-	if resp, err := c.doRaw(http.MethodPost, "/v2/specs_v2", []byte(spec), &specResp);
-		err != nil {
-		return "", err
-	} else if resp.StatusCode != 200 {
-		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
-	}
-	return fmt.Sprint(specResp.Data["jobID"]), nil
+	specResp := NewResponse()
+	_, err := c.doRaw(http.MethodPost, "/v2/specs_v2", []byte(spec), &specResp, http.StatusOK)
+	return fmt.Sprint(specResp.Data["jobID"]), err
 }
 
 func (c *Chainlink) DeleteSpecV2(id string) error {
-	if resp, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs_v2/%s", id), nil, nil);
-		err != nil {
-		return err
-	} else if resp.StatusCode != 204 {
-		return fmt.Errorf("unexpected response code, got %d, expected 204", resp.StatusCode)
-	}
-	return nil
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs_v2/%s", id), nil, nil, http.StatusNoContent)
+	return err
 }
 
 func (c *Chainlink) ReadSpec(id string) (*Response, error) {
 	specObj := &Response{}
-	if resp, err := c.do(http.MethodGet, fmt.Sprintf("/v2/specs/%s", id), nil, specObj);
-		err != nil {
-		return specObj, err
-	} else if resp.StatusCode != 200 {
-		return specObj, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
-	}
-	return specObj, nil
+	_, err := c.do(http.MethodGet, fmt.Sprintf("/v2/specs/%s", id), nil, specObj, http.StatusOK)
+	return specObj, err
 }
 
 func (c *Chainlink) DeleteSpec(id string) error {
-	if resp, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs/%s", id), nil, nil);
-		err != nil {
-		return err
-	} else if resp.StatusCode != 204 {
-		return fmt.Errorf("unexpected response code, got %d, expected 204", resp.StatusCode)
-	}
-	return nil
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs/%s", id), nil, nil, http.StatusNoContent)
+	return err
 }
 
 func (c *Chainlink) CreateBridge(name, url string) error {
-	if resp, err := c.do(
-		http.MethodPost,
-		"/v2/bridge_types",
-		BridgeTypeAttributes{Name: name, URL: url},
-		nil);
-	err != nil {
-		return err
-	} else if resp.StatusCode != 200 {
-		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
-	}
-	return nil
+	_, err := c.do(http.MethodPost, "/v2/bridge_types", BridgeTypeAttributes{Name: name, URL: url}, nil, http.StatusOK)
+	return err
 }
 
 func (c *Chainlink) ReadBridge(name string) (*BridgeType, error) {
 	bt := BridgeType{}
-	if resp, err := c.do(
-		http.MethodGet,
-		fmt.Sprintf("/v2/bridge_types/%s", name),
-		nil,
-		&bt);
-	err != nil {
-
-	} else if resp.StatusCode != 200 && resp.StatusCode != 404 {
-		return nil, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
-	}
-	return &bt, nil
+	_, err := c.do(http.MethodGet, fmt.Sprintf("/v2/bridge_types/%s", name), nil, &bt, http.StatusOK)
+	return &bt, err
 }
 
 func (c *Chainlink) DeleteBridge(name string) error {
-	if resp, err := c.do(
-		http.MethodDelete,
-		fmt.Sprintf("/v2/bridge_types/%s", name),
-		nil,
-		nil);
-	err != nil {
-		return err
-	} else if resp.StatusCode != 200 {
-		return fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
-	}
-	return nil
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/bridge_types/%s", name), nil, nil, http.StatusOK)
+	return err
 }
 
 func (c *Chainlink) ReadWallet() (string, error) {
 	walletObj := &ResponseArray{}
-	if resp, err := c.do(http.MethodGet, "/v2/user/balances", nil, &walletObj); err != nil {
+	if _, err := c.do(http.MethodGet, "/v2/user/balances", nil, &walletObj, http.StatusOK); err != nil {
 		return "", err
-	} else if resp.StatusCode != 200 {
-		return "", fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
 	} else if len(walletObj.Data) == 0 {
 		return "", fmt.Errorf("unexpected response back from Chainlink, no wallets were given")
 	}
 	return fmt.Sprint(walletObj.Data[0]["id"]), nil
 }
 
-func (c *Chainlink) doRaw(method, endpoint string, body []byte, obj interface{}) (*http.Response, error) {
+func (c *Chainlink) doRaw(
+	method,
+	endpoint string,
+	body []byte, obj interface{},
+	expectedStatusCode int,
+) (*http.Response, error) {
 	client := http.Client{}
 	req, err := http.NewRequest(
 		method,
@@ -152,15 +103,26 @@ func (c *Chainlink) doRaw(method, endpoint string, body []byte, obj interface{})
 		return nil, err
 	}
 
+	if resp.StatusCode == 404 {
+		return resp, ErrNotFound
+	} else if resp.StatusCode != expectedStatusCode {
+		return resp, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+	}
 	return resp, err
 }
 
-func (c *Chainlink) do(method, endpoint string, body interface{}, obj interface{}) (*http.Response, error) {
+func (c *Chainlink) do(
+	method,
+	endpoint string,
+	body interface{},
+	obj interface{},
+	expectedStatusCode int,
+) (*http.Response, error) {
 	b, err := json.Marshal(body)
 	if body != nil && err != nil {
 		return nil, err
 	}
-	return c.doRaw(method, endpoint, b, obj)
+	return c.doRaw(method, endpoint, b, obj, expectedStatusCode)
 }
 
 func (c *Chainlink) setSessionCookie() error {

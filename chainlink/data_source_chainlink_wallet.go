@@ -19,7 +19,11 @@ func DataSourceChainlinkWallet() *schema.Resource {
 }
 
 func resourceDataWalletRead(d *schema.ResourceData, m interface{}) error {
-	c := NewClientFromModel(d, m)
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
 	if addr, err := c.ReadWallet(); err != nil {
 		return err
 	} else if err := d.Set("address", addr); err != nil {

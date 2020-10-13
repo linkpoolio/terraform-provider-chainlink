@@ -23,9 +23,11 @@ func (c *Chainlink) CreateSpec(spec string) (string, error) {
 }
 
 func (c *Chainlink) CreateSpecV2(spec string) (string, error) {
-	specResp := NewResponse()
-	_, err := c.doRaw(http.MethodPost, "/v2/specs_v2", []byte(spec), &specResp, http.StatusOK)
-	return fmt.Sprint(specResp.Data["jobID"]), err
+	specV2Resp := struct {
+		JobID int32 `json:"jobID"`
+	}{}
+	_, err := c.doRaw(http.MethodPost, "/v2/specs_v2", []byte(spec), &specV2Resp, http.StatusOK)
+	return fmt.Sprint(specV2Resp.JobID), err
 }
 
 func (c *Chainlink) DeleteSpecV2(id string) error {
@@ -96,17 +98,18 @@ func (c *Chainlink) doRaw(
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(b, &obj)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error while reading response: %v\nresponse received: %s", err, string(b))
 	}
 
 	if resp.StatusCode == 404 {
 		return resp, ErrNotFound
 	} else if resp.StatusCode != expectedStatusCode {
-		return resp, fmt.Errorf("unexpected response code, got %d, expected 200", resp.StatusCode)
+		return resp, fmt.Errorf("unexpected response code, got %d, expected 200\nresponse received: %s", resp.StatusCode, string(b))
+	}
+
+	err = json.Unmarshal(b, &obj)
+	if err != nil {
+		return nil, fmt.Errorf("error while unmarshaling response: %v\nresponse received: %s", err, string(b))
 	}
 	return resp, err
 }

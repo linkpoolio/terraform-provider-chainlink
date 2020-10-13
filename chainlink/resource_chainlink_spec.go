@@ -28,7 +28,11 @@ func ResourceChainlinkSpec() *schema.Resource {
 }
 
 func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
-	c := NewClientFromModel(d, m)
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
 	json := d.Get("json").(string)
 
 	id, err := c.CreateSpec(json)
@@ -45,7 +49,11 @@ func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSpecRead(d *schema.ResourceData, m interface{}) error {
-	c := NewClientFromModel(d, m)
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
 	spec, err := c.ReadSpec(d.Get("spec_id").(string))
 
 	if err == client.ErrNotFound {
@@ -67,5 +75,10 @@ func resourceSpecUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSpecDelete(d *schema.ResourceData, m interface{}) error {
-	return NewClientFromModel(d, m).DeleteSpec(d.Get("spec_id").(string))
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
+	return c.DeleteSpec(d.Get("spec_id").(string))
 }

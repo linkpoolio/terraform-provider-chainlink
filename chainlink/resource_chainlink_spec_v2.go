@@ -28,7 +28,11 @@ func ResourceChainlinkSpecV2() *schema.Resource {
 }
 
 func resourceSpecV2Create(d *schema.ResourceData, m interface{}) error {
-	c := NewClientFromModel(d, m)
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
 	toml := d.Get("toml").(string)
 	id, err := c.CreateSpecV2(toml)
 	if err != nil {
@@ -54,5 +58,10 @@ func resourceSpecV2Update(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceSpecV2Delete(d *schema.ResourceData, m interface{}) error {
-	return NewClientFromModel(d, m).DeleteSpecV2(d.Get("spec_id").(string))
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
+	return c.DeleteSpecV2(d.Get("spec_id").(string))
 }

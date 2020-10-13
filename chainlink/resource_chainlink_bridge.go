@@ -28,12 +28,16 @@ func ResourceChainlinkBridgeType() *schema.Resource {
 }
 
 func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
-	c := NewClientFromModel(d, m)
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
 	name := d.Get("name").(string)
 	if name != strings.ToLower(name) {
 		return fmt.Errorf("name must not contain any capitals")
 	}
-	err := c.CreateBridge(name, d.Get("url").(string))
+	err = c.CreateBridge(name, d.Get("url").(string))
 	if err != nil {
 		return err
 	}
@@ -43,7 +47,11 @@ func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBridgeTypeRead(d *schema.ResourceData, m interface{}) error {
-	c := NewClientFromModel(d, m)
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
 	bT, err := c.ReadBridge(d.Get("name").(string))
 	if err == client.ErrNotFound {
 		d.SetId("")
@@ -68,5 +76,9 @@ func resourceBridgeTypeUpdate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceBridgeTypeDelete(d *schema.ResourceData, m interface{}) error {
-	return NewClientFromModel(d, m).DeleteBridge(d.Get("name").(string))
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+	return c.DeleteBridge(d.Get("name").(string))
 }

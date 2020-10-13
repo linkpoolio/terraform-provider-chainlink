@@ -27,7 +27,7 @@ func Provider() *schema.Provider {
 				Description: "Node password",
 			},
 		},
-		ConfigureFunc: chainlink.NewClient,
+		ConfigureFunc: chainlink.ConfigureFunc,
 		ResourcesMap: map[string]*schema.Resource{
 			"chainlink_bridge":  chainlink.ResourceChainlinkBridgeType(),
 			"chainlink_spec":    chainlink.ResourceChainlinkSpec(),

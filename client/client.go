@@ -98,18 +98,18 @@ func (c *Chainlink) doRaw(
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error while reading response: %v\nresponse received: %s", err, string(b))
+		return nil, fmt.Errorf("error while reading response: %v\nURL: %s\nresponse received: %s", err, c.Config.URL, string(b))
 	}
 
 	if resp.StatusCode == 404 {
 		return resp, ErrNotFound
 	} else if resp.StatusCode != expectedStatusCode {
-		return resp, fmt.Errorf("unexpected response code, got %d, expected 200\nresponse received: %s", resp.StatusCode, string(b))
+		return resp, fmt.Errorf("unexpected response code, got %d, expected 200\nURL: %s\nresponse received: %s", resp.StatusCode, c.Config.URL, string(b))
 	}
 
 	err = json.Unmarshal(b, &obj)
 	if err != nil {
-		return nil, fmt.Errorf("error while unmarshaling response: %v\nresponse received: %s", err, string(b))
+		return nil, fmt.Errorf("error while unmarshaling response: %v\nURL: %s\nresponse received: %s", err, c.Config.URL, string(b))
 	}
 	return resp, err
 }
@@ -142,8 +142,12 @@ func (c *Chainlink) setSessionCookie() error {
 	if err != nil {
 		return err
 	}
+	b, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error while reading response: %v\nURL: %s\nresponse received: %s", err, c.Config.URL, string(b))
+	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("status code of %d was returned when trying to get a session", resp.StatusCode)
+		return fmt.Errorf("status code of %d was returned when trying to get a session\nURL: %s\nresponse received: %s", resp.StatusCode, c.Config.URL, b)
 	}
 	if len(resp.Cookies()) == 0 {
 		return fmt.Errorf("no cookie was returned after getting a session")

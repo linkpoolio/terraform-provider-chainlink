@@ -23,15 +23,20 @@ func (c *Chainlink) CreateSpec(spec string) (string, error) {
 }
 
 func (c *Chainlink) CreateSpecV2(spec string) (string, error) {
+	specV2Create := struct {
+		TOML string `json:"toml"`
+	}{
+		TOML: spec,
+	}
 	specV2Resp := struct {
 		JobID int32 `json:"jobID"`
 	}{}
-	_, err := c.doRaw(http.MethodPost, "/v2/specs_v2", []byte(spec), &specV2Resp, http.StatusOK)
+	_, err := c.do(http.MethodPost, "/v2/ocr/specs", specV2Create, &specV2Resp, http.StatusOK)
 	return fmt.Sprint(specV2Resp.JobID), err
 }
 
 func (c *Chainlink) DeleteSpecV2(id string) error {
-	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/specs_v2/%s", id), nil, nil, http.StatusNoContent)
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/ocr/specs/%s", id), nil, nil, http.StatusNoContent)
 	return err
 }
 
@@ -72,6 +77,40 @@ func (c *Chainlink) ReadWallet() (string, error) {
 	return fmt.Sprint(walletObj.Data[0]["id"]), nil
 }
 
+func (c *Chainlink) CreateOCRKey() (*OCRKey, error) {
+	ocrKey := &OCRKey{}
+	_, err := c.do(http.MethodPost, "/v2/off_chain_reporting_keys", nil, ocrKey, http.StatusOK)
+	return ocrKey, err
+}
+
+func (c *Chainlink) ReadOCRKeys() (*OCRKeys, error) {
+	ocrKeys := &OCRKeys{}
+	_, err := c.do(http.MethodGet, "/v2/off_chain_reporting_keys", nil, ocrKeys, http.StatusOK)
+	return ocrKeys, err
+}
+
+func (c *Chainlink) DeleteOCRKey(id string) error {
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/off_chain_reporting_keys/%s", id), nil, nil, http.StatusOK)
+	return err
+}
+
+func (c *Chainlink) CreateP2PKey() (*P2PKey, error) {
+	p2pKey := &P2PKey{}
+	_, err := c.do(http.MethodPost, "/v2/p2p_keys", nil, p2pKey, http.StatusOK)
+	return p2pKey, err
+}
+
+func (c *Chainlink) ReadP2PKeys() (*P2PKeys, error) {
+	p2pKeys := &P2PKeys{}
+	_, err := c.do(http.MethodGet, "/v2/p2p_keys", nil, p2pKeys, http.StatusOK)
+	return p2pKeys, err
+}
+
+func (c *Chainlink) DeleteP2PKey(id int) error {
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/p2p_keys/%d", id), nil, nil, http.StatusOK)
+	return err
+}
+
 func (c *Chainlink) doRaw(
 	method,
 	endpoint string,
@@ -87,7 +126,9 @@ func (c *Chainlink) doRaw(
 	if err != nil {
 		return nil, err
 	}
-	req.AddCookie(c.Cookie)
+	for _, cookie := range c.Cookies {
+		req.AddCookie(cookie)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -152,13 +193,15 @@ func (c *Chainlink) setSessionCookie() error {
 	if len(resp.Cookies()) == 0 {
 		return fmt.Errorf("no cookie was returned after getting a session")
 	}
+	c.Cookies = resp.Cookies()
+
+	sessionFound := false
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == "clsession" {
-			c.Cookie = cookie
-			break
+			sessionFound = true
 		}
 	}
-	if c.Cookie == nil {
+	if !sessionFound {
 		return fmt.Errorf("chainlink: session cookie wasn't returned on login")
 	}
 	return nil

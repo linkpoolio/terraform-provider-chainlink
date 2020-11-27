@@ -44,6 +44,43 @@ type Session struct {
 	Password string `json:"password"`
 }
 
+type OCRKeys struct {
+	Data []OCRKeyData `json:"data"`
+}
+
+type OCRKey struct {
+	Data OCRKeyData `json:"data"`
+}
+
+type OCRKeyData struct {
+	Attributes OCRKeyAttributes `json:"attributes"`
+}
+
+type OCRKeyAttributes struct {
+	ID                    string `json:"id"`
+	ConfigPublicKey       string `json:"configPublicKey"`
+	OffChainPublicKey     string `json:"offChainPublicKey"`
+	OnChainSigningAddress string `json:"onChainSigningAddress"`
+}
+
+type P2PKeys struct {
+	Data []P2PKeyData `json:"data"`
+}
+
+type P2PKey struct {
+	Data P2PKeyData `json:"data"`
+}
+
+type P2PKeyData struct {
+	Attributes P2PKeyAttributes `json:"attributes"`
+}
+
+type P2PKeyAttributes struct {
+	ID        int    `json:"id"`
+	PeerID    string `json:"peerId"`
+	PublicKey string `json:"publicKey"`
+}
+
 type Client interface {
 	CreateBridge(addr, name, url string) error
 	ReadBridge(id string) (*BridgeType, error)
@@ -52,8 +89,8 @@ type Client interface {
 
 type Chainlink struct {
 	Client
-	Config *Config
-	Cookie *http.Cookie
+	Config  *Config
+	Cookies []*http.Cookie
 }
 
 type DataIdentifier interface {

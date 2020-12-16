@@ -36,7 +36,7 @@ func Provider() *schema.Provider {
 			"chainlink_p2p_key": chainlink.ResourceChainlinkP2PKey(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"chainlink_wallet": chainlink.DataSourceChainlinkWallet(),
+			"chainlink_eth_key": chainlink.DataSourceETHKey(),
 		},
 	}
 }

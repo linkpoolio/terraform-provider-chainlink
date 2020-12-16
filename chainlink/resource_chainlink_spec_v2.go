@@ -13,11 +13,6 @@ func ResourceChainlinkSpecV2() *schema.Resource {
 		Update: resourceSpecV2Update,
 
 		Schema: mergeSchemaWithNodeProperties(map[string]*schema.Schema{
-			"spec_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-				ForceNew: true,
-			},
 			"toml": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -34,19 +29,26 @@ func resourceSpecV2Create(d *schema.ResourceData, m interface{}) error {
 	}
 
 	toml := d.Get("toml").(string)
-	id, err := c.CreateSpecV2(toml)
+	spec, err := c.CreateSpecV2(toml)
 	if err != nil {
 		return err
 	}
-	matcher := client.NewMatcher("spec_v2", id)
-	d.SetId(matcher.Id())
-	if err := d.Set("spec_id", id); err != nil {
-		return err
-	}
+	d.SetId(spec.Data.ID)
 	return nil
 }
 
-func resourceSpecV2Read(_ *schema.ResourceData, _ interface{}) error {
+func resourceSpecV2Read(d *schema.ResourceData, m interface{}) error {
+	c, err := NewClientFromModel(d, m)
+	if err != nil {
+		return err
+	}
+
+	if err := c.ReadSpecV2(d.Id()); err == client.ErrNotFound || err == client.ErrUnprocessableEntity {
+		d.SetId("")
+		return nil
+	} else if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -63,5 +65,5 @@ func resourceSpecV2Delete(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	return c.DeleteSpecV2(d.Get("spec_id").(string))
+	return c.DeleteSpecV2(d.Id())
 }

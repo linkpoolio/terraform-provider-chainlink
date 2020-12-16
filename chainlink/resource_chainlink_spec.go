@@ -13,11 +13,6 @@ func ResourceChainlinkSpec() *schema.Resource {
 		Update: resourceSpecUpdate,
 
 		Schema: mergeSchemaWithNodeProperties(map[string]*schema.Schema{
-			"spec_id": {
-				Type:     schema.TypeString,
-				Computed: true,
-				ForceNew: true,
-			},
 			"json": {
 				Type:     schema.TypeString,
 				Required: true,
@@ -40,11 +35,7 @@ func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	matcher := client.NewMatcher("spec", id)
-	d.SetId(matcher.Id())
-	if err := d.Set("spec_id", id); err != nil {
-		return err
-	}
+	d.SetId(id)
 	return nil
 }
 
@@ -54,14 +45,11 @@ func resourceSpecRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	spec, err := c.ReadSpec(d.Get("spec_id").(string))
-
+	_, err = c.ReadSpec(d.Id())
 	if err == client.ErrNotFound {
 		d.SetId("")
 	} else if err != nil {
 		d.SetId("")
-		return err
-	} else if err := d.Set("spec_id", spec.Data["id"]); err != nil {
 		return err
 	}
 	return nil
@@ -80,5 +68,5 @@ func resourceSpecDelete(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	return c.DeleteSpec(d.Get("spec_id").(string))
+	return c.DeleteSpec(d.Id())
 }

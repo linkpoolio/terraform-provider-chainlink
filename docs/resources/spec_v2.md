@@ -33,4 +33,4 @@ resource "chainlink_spec_v2" "bootstrap" {
 
 ### Read-only
 
-- **spec_id** (String, Read-only) the ID of the v2 job spec
+- **id** (String, Read-only) the ID of the v2 job spec

@@ -41,8 +41,7 @@ func resourceBridgeTypeCreate(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return err
 	}
-	matcher := client.NewMatcher("bridge", name)
-	d.SetId(matcher.Id())
+	d.SetId(name)
 	return nil
 }
 

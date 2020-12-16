@@ -2,27 +2,30 @@
 page_title: "chainlink_wallet Data Source - terraform-provider-chainlink"
 subcategory: ""
 description: |-
-  Get the active nodes wallet address as shown in Chainlink config
+  Get an active ETH key as shown within the keys page.
 ---
 
-# Data Source `chainlink_wallet`
+# Data Source `chainlink_eth_key`
 
-Get the active wallet address as shown in config.
+Get an ETH wallet address.
 
 ## Example Usage
 
 ```terraform
-data "chainlink_wallet" "this" {}
+data "chainlink_eth_key" "this" {}
 ```
 
 ## Schema
 
 ### Optional
 
+- **index** (Integer, Optional, Default: 0) the index within the returned keys to return 
+
+---
 - **chainlink_url** (String, Optional) equivalent to `url` in the provider configuration, takes precedence over the provider
 - **chainlink_email** (String, Optional) equivalent to `email` in the provider configuration, takes precedence over the provider
 - **chainlink_password** (String, Optional) equivalent to `password` in the provider configuration, takes precedence over the provider
 
 ### Read-only
 
-- **address** (String, Read-only) the Ethereum address of the Chainlink node
+- **id** (String, Read-only) the Ethereum address of the ETH key

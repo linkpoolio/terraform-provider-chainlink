@@ -10,6 +10,7 @@ import (
 )
 
 var ErrNotFound = errors.New("unexpected response code, got 404")
+var ErrUnprocessableEntity = errors.New("unexpected response code, got 422")
 
 func NewChainlink(c *Config) (*Chainlink, error) {
 	cl := &Chainlink{Config: c}
@@ -22,21 +23,21 @@ func (c *Chainlink) CreateSpec(spec string) (string, error) {
 	return fmt.Sprint(specResp.Data["id"]), err
 }
 
-func (c *Chainlink) CreateSpecV2(spec string) (string, error) {
-	specV2Create := struct {
-		TOML string `json:"toml"`
-	}{
+func (c *Chainlink) CreateSpecV2(spec string) (*SpecV2, error) {
+	specV2 := &SpecV2{}
+	_, err := c.do(http.MethodPost, "/v2/jobs", &SpecV2Form{
 		TOML: spec,
-	}
-	specV2Resp := struct {
-		JobID int32 `json:"jobID"`
-	}{}
-	_, err := c.do(http.MethodPost, "/v2/ocr/specs", specV2Create, &specV2Resp, http.StatusOK)
-	return fmt.Sprint(specV2Resp.JobID), err
+	}, &specV2, http.StatusOK)
+	return specV2, err
+}
+
+func (c *Chainlink) ReadSpecV2(id string) error {
+	_, err := c.do(http.MethodGet, fmt.Sprintf("/v2/jobs/%s", id), nil, nil, http.StatusOK)
+	return err
 }
 
 func (c *Chainlink) DeleteSpecV2(id string) error {
-	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/ocr/specs/%s", id), nil, nil, http.StatusNoContent)
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/jobs/%s", id), nil, nil, http.StatusNoContent)
 	return err
 }
 
@@ -67,48 +68,44 @@ func (c *Chainlink) DeleteBridge(name string) error {
 	return err
 }
 
-func (c *Chainlink) ReadWallet() (string, error) {
-	walletObj := &ResponseArray{}
-	if _, err := c.do(http.MethodGet, "/v2/user/balances", nil, &walletObj, http.StatusOK); err != nil {
-		return "", err
-	} else if len(walletObj.Data) == 0 {
-		return "", fmt.Errorf("unexpected response back from Chainlink, no wallets were given")
-	}
-	return fmt.Sprint(walletObj.Data[0]["id"]), nil
-}
-
 func (c *Chainlink) CreateOCRKey() (*OCRKey, error) {
 	ocrKey := &OCRKey{}
-	_, err := c.do(http.MethodPost, "/v2/off_chain_reporting_keys", nil, ocrKey, http.StatusOK)
+	_, err := c.do(http.MethodPost, "/v2/keys/ocr", nil, ocrKey, http.StatusOK)
 	return ocrKey, err
 }
 
 func (c *Chainlink) ReadOCRKeys() (*OCRKeys, error) {
 	ocrKeys := &OCRKeys{}
-	_, err := c.do(http.MethodGet, "/v2/off_chain_reporting_keys", nil, ocrKeys, http.StatusOK)
+	_, err := c.do(http.MethodGet, "/v2/keys/ocr", nil, ocrKeys, http.StatusOK)
 	return ocrKeys, err
 }
 
 func (c *Chainlink) DeleteOCRKey(id string) error {
-	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/off_chain_reporting_keys/%s", id), nil, nil, http.StatusOK)
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/keys/ocr/%s", id), nil, nil, http.StatusOK)
 	return err
 }
 
 func (c *Chainlink) CreateP2PKey() (*P2PKey, error) {
 	p2pKey := &P2PKey{}
-	_, err := c.do(http.MethodPost, "/v2/p2p_keys", nil, p2pKey, http.StatusOK)
+	_, err := c.do(http.MethodPost, "/v2/keys/p2p", nil, p2pKey, http.StatusOK)
 	return p2pKey, err
 }
 
 func (c *Chainlink) ReadP2PKeys() (*P2PKeys, error) {
 	p2pKeys := &P2PKeys{}
-	_, err := c.do(http.MethodGet, "/v2/p2p_keys", nil, p2pKeys, http.StatusOK)
+	_, err := c.do(http.MethodGet, "/v2/keys/p2p", nil, p2pKeys, http.StatusOK)
 	return p2pKeys, err
 }
 
 func (c *Chainlink) DeleteP2PKey(id int) error {
-	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/p2p_keys/%d", id), nil, nil, http.StatusOK)
+	_, err := c.do(http.MethodDelete, fmt.Sprintf("/v2/keys/p2p/%d", id), nil, nil, http.StatusOK)
 	return err
+}
+
+func (c *Chainlink) ReadETHKeys() (*ETHKeys, error) {
+	ethKeys := &ETHKeys{}
+	_, err := c.do(http.MethodGet, "/v2/keys/eth", nil, ethKeys, http.StatusOK)
+	return ethKeys, err
 }
 
 func (c *Chainlink) doRaw(
@@ -133,21 +130,23 @@ func (c *Chainlink) doRaw(
 	resp, err := client.Do(req)
 	if err != nil {
 		return resp, err
-	} else if obj == nil {
-		return resp, err
 	}
 
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error while reading response: %v\nURL: %s\nresponse received: %s", err, c.Config.URL, string(b))
 	}
-
-	if resp.StatusCode == 404 {
+	if resp.StatusCode == http.StatusNotFound {
 		return resp, ErrNotFound
+	} else if resp.StatusCode == http.StatusUnprocessableEntity {
+		return resp, ErrUnprocessableEntity
 	} else if resp.StatusCode != expectedStatusCode {
 		return resp, fmt.Errorf("unexpected response code, got %d, expected 200\nURL: %s\nresponse received: %s", resp.StatusCode, c.Config.URL, string(b))
 	}
 
+	if obj == nil {
+		return resp, err
+	}
 	err = json.Unmarshal(b, &obj)
 	if err != nil {
 		return nil, fmt.Errorf("error while unmarshaling response: %v\nURL: %s\nresponse received: %s", err, c.Config.URL, string(b))

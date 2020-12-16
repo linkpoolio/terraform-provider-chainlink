@@ -1,9 +1,7 @@
 package client
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 )
 
 type Config struct {
@@ -81,6 +79,34 @@ type P2PKeyAttributes struct {
 	PublicKey string `json:"publicKey"`
 }
 
+type ETHKeys struct {
+	Data []ETHKeyData `json:"data"`
+}
+
+type ETHKey struct {
+	Data ETHKeyData `json:"data"`
+}
+
+type ETHKeyData struct {
+	Attributes ETHKeyAttributes `json:"attributes"`
+}
+
+type ETHKeyAttributes struct {
+	Address string `json:"address"`
+}
+
+type SpecV2Form struct {
+	TOML string `json:"toml"`
+}
+
+type SpecV2 struct {
+	Data SpecV2Data `json:"data"`
+}
+
+type SpecV2Data struct {
+	ID string `json:"id"`
+}
+
 type Client interface {
 	CreateBridge(addr, name, url string) error
 	ReadBridge(id string) (*BridgeType, error)
@@ -95,29 +121,4 @@ type Chainlink struct {
 
 type DataIdentifier interface {
 	Id() string
-}
-
-type Matcher struct {
-	DataIdentifier
-	Object string
-	Data   string
-}
-
-func NewMatcher(obj, data string) Matcher {
-	return Matcher{
-		Object: obj,
-		Data:   data,
-	}
-}
-
-func NewMatcherFromID(id string) Matcher {
-	s := strings.Split(id, Delimiter())
-	return Matcher{
-		Object: s[0],
-		Data:   s[1],
-	}
-}
-
-func (i *Matcher) Id() string {
-	return fmt.Sprintf("%s%s%s", i.Object, Delimiter(), i.Data)
 }

@@ -40,8 +40,7 @@ func resourceSpecCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	matcher := client.NewMatcher("spec", id)
-	d.SetId(matcher.Id())
+	d.SetId(id)
 	if err := d.Set("spec_id", id); err != nil {
 		return err
 	}

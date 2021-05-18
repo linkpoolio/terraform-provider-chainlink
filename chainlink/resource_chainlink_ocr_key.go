@@ -42,7 +42,7 @@ func resourceOCRKeyCreate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	d.SetId(key.Data.Attributes.ID)
+	d.SetId(key.Data.ID)
 	if err := d.Set("config_public_key", key.Data.Attributes.ConfigPublicKey); err != nil {
 		return err
 	} else if err := d.Set("offchain_public_key", key.Data.Attributes.OffChainPublicKey); err != nil {
@@ -67,7 +67,7 @@ func resourceOCRKeyRead(d *schema.ResourceData, m interface{}) error {
 	id := d.Id()
 	found := false
 	for _, key := range keys.Data {
-		if key.Attributes.ID == id {
+		if key.ID == id {
 			found = true
 			break
 		}

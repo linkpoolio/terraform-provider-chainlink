@@ -51,11 +51,11 @@ type OCRKey struct {
 }
 
 type OCRKeyData struct {
+	ID         string           `json:"id"`
 	Attributes OCRKeyAttributes `json:"attributes"`
 }
 
 type OCRKeyAttributes struct {
-	ID                    string `json:"id"`
 	ConfigPublicKey       string `json:"configPublicKey"`
 	OffChainPublicKey     string `json:"offChainPublicKey"`
 	OnChainSigningAddress string `json:"onChainSigningAddress"`

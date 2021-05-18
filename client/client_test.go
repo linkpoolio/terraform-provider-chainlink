@@ -38,18 +38,17 @@ func TestNodeClient_CreateReadDeleteBridgeType(t *testing.T) {
 	c := newDefaultClient(t)
 	n := fmt.Sprintf("adapter-%d", rand.Int())
 	u := "http://adapter.com/"
-	m := NewMatcher(u, n)
 
 	err := c.CreateBridge(n, u)
 	assert.NoError(t, err)
 
-	bT, err := c.ReadBridge(m.Data)
+	bT, err := c.ReadBridge(n)
 	assert.NoError(t, err)
 
 	assert.Equal(t, bT.Data.Attributes.Name, n)
 	assert.Equal(t, bT.Data.Attributes.URL, u)
 
-	err = c.DeleteBridge(m.Data)
+	err = c.DeleteBridge(n)
 	assert.NoError(t, err)
 }
 
@@ -58,14 +57,13 @@ func TestNodeClient_CreateReadDeleteSpec(t *testing.T) {
 
 	id, err := c.CreateSpec(job)
 	assert.NoError(t, err)
-	m := NewMatcher("spec", id)
 
-	spec, err := c.ReadSpec(m.Data)
+	spec, err := c.ReadSpec(id)
 	assert.NoError(t, err)
 
 	assert.Equal(t, spec.Data["id"], id)
 
-	err = c.DeleteSpec(m.Data)
+	err = c.DeleteSpec(id)
 	assert.NoError(t, err)
 }
 

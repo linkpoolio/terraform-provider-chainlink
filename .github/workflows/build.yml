@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: golang:1.15.2
+      image: golang:1.17.6
 
     services:
       postgres:

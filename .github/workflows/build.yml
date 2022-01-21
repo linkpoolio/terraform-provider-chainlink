@@ -24,7 +24,7 @@ jobs:
         ports:
           - 8545:8545
       chainlink:
-        image: smartcontract/chainlink
+        image: smartcontract/chainlink:0.10.15
         env:
           DATABASE_URL: postgres://postgres:5432/postgres?user=postgres&password=password&sslmode=disable
           ETH_URL: ws://ganache:8545
